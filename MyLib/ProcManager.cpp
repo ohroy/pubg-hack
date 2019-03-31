@@ -1,8 +1,9 @@
-
+#include "pch.h"
 #include "ProcManager.h"
 #include <TlHelp32.h>
 #include <tchar.h>
 #include <Psapi.h>
+#include <stdio.h>
 #pragma comment(lib,"Psapi.lib")
 
 ProcManager::ProcManager()
@@ -125,6 +126,7 @@ int ProcManager::GetAowProcId()
 		if (_tcsicmp(pe32.szExeFile, _T("aow_exe.exe")) == 0)
 		{
 			DWORD dwTmpThreadCount = GetProcessThreadNumByID(pe32.th32ProcessID);
+			printf("%x=>%d\n", pe32.th32ProcessID, dwTmpThreadCount);
 			if (dwTmpThreadCount > dwThreadCountMax)
 			{
 				dwThreadCountMax = dwTmpThreadCount;

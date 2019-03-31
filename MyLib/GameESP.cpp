@@ -1,6 +1,8 @@
+#include "pch.h"
 #include "GameESP.h"
 #include "Misc.h"
 #include "aobscan.h"
+#include <stdio.h>
 
 DxManager *pDxm = NULL;
 D3DMenu* pMenu = NULL;
@@ -33,7 +35,7 @@ DWORD dwGamePid;
 //fcd7????00002000 对象
 //98??????08000400 本人
 //1676（血量偏移）
-//3440（坐标偏移）
+//3440  3780（坐标偏移）
 
 //国服：
 //对象地址：C8 ?? ?? 2A 00 00 20 00
@@ -41,6 +43,7 @@ DWORD dwGamePid;
 //矩阵地址：AB AA AA 3E 00 00 00 80 00 00 00 80 00 00 80 3F 00 00 00 80 61 8B 98 3F
 //人机偏移：一级18 二级 10进制684
 //血量偏移：一级18 二级68C
+// 6b0
 //编号偏移：一级18 二级2CC 三级14
 //激光偏移：一级18 二级10D0  三级偏移650 后坐偏移574  上下偏移610  左右偏移628
 //瞬间偏移：一级18 二级10D0  三级偏移650 直接2EC
@@ -67,22 +70,23 @@ DWORD dwGamePid;
 
 namespace GameData {
 	BYTE bJuzhenTag[] = { 0xAB,0xAA,0xAA,0x3E,0x00,0x00,0x00,0x80,0x00,0x00,0x00,0x80,0x00,0x00,0x80,0x3F,0x00,0x00,0x00,0x80,0x61,0x8B,0x98,0x3F };
-	BYTE bPeopleTag[] = { 0xc8,'?', '?',0x2a,0x00,0x00,0x20,0x00 };
+	BYTE bPeopleTag[] = { 0x10,'?', '?',0x2A,0x00,0x00,0x20,0x00,'?','?','?',0x00,0x00,'?' ,'?' ,'?' ,'?' ,0x40,0x01};
 	BYTE bLocalPlayerTag[] = { 0x98,'?','?',0x2A ,0x00 ,0x00 ,0x20 ,0x00 };
 	//BYTE bGoodsTag[] = { 0x9C,'?','?','?', 0x00 ,0x00 ,0x20 ,0x00 };
 	//BYTE bGoodsTag[] = { 0x9C,0xdf,'?','?', 0x00 ,0x00 ,0x20 ,0x00 };
-	BYTE bGoodsTag[] = { 0x9C,'?','?',0x2a, 0x00 ,0x00 ,0x20 ,0x00 };
-	BYTE bCarsTag[] = { 0xEC,'?', '?', '?',0x00,0x00,0x20,0x00 };
+	BYTE bGoodsTag[] = { '?','?','?','?', 0x00 ,0x00 ,0x20 ,0x00,'?','?',0x03,0x00 };
+	BYTE bCarsTag[] = { 0x88,'?', '?', '?',0x00,0x00,0x20,0x00 };
 	DWORD OFFSET_1 = 0x18; //24
 	DWORD OFFSET_2 = 0x120; //288
-	DWORD BLOOD_OFFSET = 0x68C;
-	DWORD POS_OFFSET = 3440;
+	DWORD BLOOD_OFFSET = 0x6b0;
+	DWORD POS_OFFSET = 0xec4;
+	DWORD DUIYOU_OFFSET = 0x2cc;
 	DWORD RENJI_OFFSET = 684;
-	DWORD STATUS_OFFSET = 2544;
+	DWORD STATUS_OFFSET = 0xAE0;
 
 	DWORD B_GOODS_OFFSET = 132;//判断是否为物品
 	DWORD GOODS_ID_OFFSET = 272;//物品id偏移
-	DWORD GOODS_POS_OFFSET = 336;//物品坐标偏移
+	DWORD GOODS_POS_OFFSET = 0x150;//0x150;//物品坐标偏移
 }
 
 
@@ -90,11 +94,11 @@ namespace global
 {
 	int bEsp = false;
 	int bPlayer = false;
-	int bVehicle = false;
+	int bVehicle = true;
 	int bGoods = false;
 
 	int bAim = false;
-	int bAimOpen = false;
+	int bAimOpen = true;
 	int nAimPos = 0;
 
 	int bAbout = 0;
@@ -230,13 +234,15 @@ DWORD WINAPI ThreadUpdateData(LPVOID p)
 					break;
 				}
 			}
+			printf("juzhen %x \n", dwJuzhenAddr);
 		}
+
 		//更新对象
 		std::vector<DWORD_PTR> vPeople;
-		pMM->MemSearch(GameData::bPeopleTag, sizeof(GameData::bPeopleTag), 0x00327000, 0x7fffffff, FALSE, 0, vPeople);
+		pMM->MemSearch(GameData::bPeopleTag, sizeof(GameData::bPeopleTag), 0x20327000, 0x7fffffff, FALSE, 0, vPeople);
 		//vPeople = AobScan::FindSigX32(dwGamePid, "fcd7????00002000", 0x10000000, 0x7fffffff);
 		//LeaveCriticalSection(&cs);//离开临界区
-		dwPeopleCount = vPeople.size();
+ 		dwPeopleCount = vPeople.size();
 		for (int i=0;i< dwPeopleCount;i++)
 		{
 			dwPeople[i] = vPeople[i];
@@ -244,7 +250,7 @@ DWORD WINAPI ThreadUpdateData(LPVOID p)
 
 		
 
-		Sleep(1000*2);//更新数据的时间
+		Sleep(100);//更新数据的时间
 	}
 	return 1;
 }
@@ -255,7 +261,7 @@ DWORD WINAPI ThreadUpdateData2(LPVOID p)
 	{
 		//更新物品
 		std::vector<DWORD_PTR> vGoods;
-		pMM->MemSearch(GameData::bGoodsTag, sizeof(GameData::bGoodsTag), 0x00327000, 0x7fffffff, FALSE, 0, vGoods);
+		pMM->MemSearch(GameData::bGoodsTag, sizeof(GameData::bGoodsTag), 0x20327000, 0x7fffffff, FALSE, 0, vGoods);
 		//vGoods = AobScan::FindSigX32(dwGamePid, "9CDF????00002000", 0x10000000, 0x7fffffff);
 
 		dwGoodsCount = vGoods.size();
@@ -322,20 +328,28 @@ void ESPWork()
 	{
 		DWORD_PTR dw1 = pMM->RPM<DWORD_PTR>(dwPeople[i] + GameData::OFFSET_1, sizeof(DWORD_PTR));
 		DWORD_PTR dw2 = pMM->RPM<DWORD_PTR>(dw1 + GameData::OFFSET_2, sizeof(DWORD_PTR));
-		float fBlood = pMM->RPM<float>(dw2 + GameData::BLOOD_OFFSET, sizeof(float));
+		float fBlood = pMM->RPM<float>(dw1 + GameData::BLOOD_OFFSET, sizeof(float));
 		
-		if (fabs(fBlood) > 1e-5 && fBlood >0.0)//大于0
+		if (fabs(fBlood) > 1e-5 && fBlood >0.0 && fBlood<=100)//大于0
 		{
 
-			DWORD dwTeamId = pMM->RPM<DWORD>(pMM->RPM<DWORD>(dw1 + 0x2cc, sizeof(DWORD)) + 0x14, sizeof(DWORD));
-	
-			if(dwTeamId<0x10)
+			//判断队友
+			DWORD dwTeamId = pMM->RPM<DWORD>(pMM->RPM<DWORD>(dw1 + GameData::DUIYOU_OFFSET, sizeof(DWORD)) + 0x14, sizeof(DWORD));
+			//DWORD dwTeamId2 = pMM->RPM<DWORD>(pMM->RPM<DWORD>(dw1 + GameData::DUIYOU_OFFSET+4, sizeof(DWORD)) + 0x14, sizeof(DWORD));
+			//printf("队友id %d\n", dwTeamId);
+			if(dwTeamId<0x10 && dwTeamId!=0)
+			{
+				continue;
+			}
+			DWORD tmpid = pMM->RPM<DWORD>(dw1 + 0x14, sizeof(DWORD));
+			//printf("队友id%d\n",tmpid);
+			if(tmpid ==1)
 			{
 				continue;
 			}
 
 			nRealPeopleCount++;
-			D3DXVECTOR3 vPos = pMM->RPM<D3DXVECTOR3>(dw2 + GameData::POS_OFFSET, sizeof(D3DXVECTOR3));
+			D3DXVECTOR3 vPos = pMM->RPM<D3DXVECTOR3>(dw1 + GameData::POS_OFFSET, sizeof(D3DXVECTOR3));
 			D3DXVECTOR3 vret;
 			int nLen = 0;
 
@@ -433,7 +447,7 @@ void ESPWork()
 		g_AimY = 0;
 	}
 
-	pDxm->DrawString(pDxm->s_width/2-300, pDxm->s_height/11, DARKORANGE, pDxm->pFont, "附近存在[%d]敌人", nRealPeopleCount/2);
+	pDxm->DrawString(pDxm->s_width/2-300, pDxm->s_height/11, DARKORANGE, pDxm->pFont, "附近存在[%d]敌人", (nRealPeopleCount+1)/2);
 #pragma endregion
 
 #pragma region 物品
@@ -448,57 +462,57 @@ void ESPWork()
 			{
 				nNowGoodCount++;
 				int nId = pMM->RPM<int>(dwGoods[i] + GameData::GOODS_ID_OFFSET, sizeof(int));
-
-				char szGoodName[20] = { 0 };
-				switch (nId)
-				{
-				case 1098798372:
-					strcat(szGoodName, "三级包");
-					break;
-				case 1078228938:
-					strcat(szGoodName, "SCAR-L");
-					break;
-				case 1070342297:
-					strcat(szGoodName, "M416");
-					break;
-				case 1075583328:
-					strcat(szGoodName, "QBZ");
-					break;
-				case 1075923558:
-					strcat(szGoodName, "SKS");
-					break;
-				case 1081607025:
-					strcat(szGoodName, "SLR");
-					break;
-				case 1084841537:
-					strcat(szGoodName, "三级甲");
-					break;
-				case 1103479324:
-					strcat(szGoodName, "三级头");
-					break;
-				case 1089312141:
-					strcat(szGoodName, "八倍镜");
-					break;
-				case 1090071692:
-					strcat(szGoodName, "六倍镜");
-					break;
-				case 1091232615:
-					strcat(szGoodName, "四倍镜");
-					break;
-				case 1080193518:
-					strcat(szGoodName, "7.62mm");
-					break;
-				case 1079905560:
-					strcat(szGoodName, "5.56mm");
-					break;
-				default:
-					break;
-				}
-				if (szGoodName[0] == 0)
-				{
-					break;
-				}
-				printf("%s\n",szGoodName);
+				char szGoodName[] = "xxxx";
+				//char szGoodName[20] = { 0 };
+				// switch (nId)
+				// {
+				// case 1098798372:
+				// 	strcat(szGoodName, "三级包");
+				// 	break;
+				// case 1078228938:
+				// 	strcat(szGoodName, "SCAR-L");
+				// 	break;
+				// case 1070342297:
+				// 	strcat(szGoodName, "M416");
+				// 	break;
+				// case 1075583328:
+				// 	strcat(szGoodName, "QBZ");
+				// 	break;
+				// case 1075923558:
+				// 	strcat(szGoodName, "SKS");
+				// 	break;
+				// case 1081607025:
+				// 	strcat(szGoodName, "SLR");
+				// 	break;
+				// case 1084841537:
+				// 	strcat(szGoodName, "三级甲");
+				// 	break;
+				// case 1103479324:
+				// 	strcat(szGoodName, "三级头");
+				// 	break;
+				// case 1089312141:
+				// 	strcat(szGoodName, "八倍镜");
+				// 	break;
+				// case 1090071692:
+				// 	strcat(szGoodName, "六倍镜");
+				// 	break;
+				// case 1091232615:
+				// 	strcat(szGoodName, "四倍镜");
+				// 	break;
+				// case 1080193518:
+				// 	strcat(szGoodName, "7.62mm");
+				// 	break;
+				// case 1079905560:
+				// 	strcat(szGoodName, "5.56mm");
+				// 	break;
+				// default:
+				// 	break;
+				// }
+				// if (szGoodName[0] == 0)
+				// {
+				// 	break;
+				// }
+				// printf("%s\n",szGoodName);
 
 				D3DXVECTOR3 vPosGoods = pMM->RPM<D3DXVECTOR3>(dwGoods[i] + GameData::GOODS_POS_OFFSET, sizeof(D3DXVECTOR3));
 				D3DXVECTOR3 vret;
@@ -516,17 +530,21 @@ void ESPWork()
 	
 #pragma endregion
 #pragma region 车辆
+	DWORD current_offset = GameData::GOODS_POS_OFFSET;
+	bool willadd = true;
 	if (global::bVehicle)
 	{
 		for (size_t i = 0; i < dwCarsCount; i++)
 		{
-			D3DXVECTOR3 vPosCars = pMM->RPM<D3DXVECTOR3>(dwCars[i] + GameData::GOODS_POS_OFFSET, sizeof(D3DXVECTOR3));
+			D3DXVECTOR3 vPosCars = pMM->RPM<D3DXVECTOR3>(dwCars[i] + current_offset, sizeof(D3DXVECTOR3));
 			D3DXVECTOR3 vret;
 			int nLen = 0;
 			if (WorldToScreenGoods(vPosCars, vret, nLen))
 			{
 				if (nLen>0 && nLen<1000)
 				{
+					willadd = false;
+					//printf("ok len :%x", current_offset);
 					pDxm->DrawString(vret.x, vret.y, TextCyan, pDxm->pFont, "座驾[%dm]", nLen);
 				}
 				

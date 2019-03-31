@@ -32,7 +32,7 @@ int MemFind(BYTE *buffer, int dwBufferSize, BYTE *bstr, DWORD dwStrLen)
 		return -1;
 	}
 	DWORD  i, j;
-	for (i = 0; i < dwBufferSize; i++)
+	for (i = 0; i < dwBufferSize; i=i+4)
 	{
 		for (j = 0; j < dwStrLen; j++)
 		{

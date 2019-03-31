@@ -1,19 +1,4 @@
-/*******************************************************************************
-*
-*  (C) COPYRIGHT AUTHORS, 2015 - 2017, portions (C) Mark Russinovich, FileMon
-*
-*  TITLE:       INSTDRV.C
-*
-*  VERSION:     1.10
-*
-*  DATE:        17 Apr 2017
-*
-* THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
-* ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED
-* TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
-* PARTICULAR PURPOSE.
-*
-*******************************************************************************/
+#include "pch.h"
 #include "instdrv.h"
 #include <stdio.h>
 /*
@@ -89,8 +74,18 @@ BOOL scmStartDriver(
 	}
         
 
-    ret = StartService(schService, 0, NULL)
-        || GetLastError() == ERROR_SERVICE_ALREADY_RUNNING;
+	ret = StartService(schService, 0, NULL);
+	if(!ret)
+	{
+		DWORD errcode = GetLastError();//== ERROR_SERVICE_ALREADY_RUNNING;
+		if(errcode!= ERROR_SERVICE_ALREADY_RUNNING)
+		{
+			printf_s("start service error:%d", errcode);
+			ret = true;
+		}
+		
+	}
+        
 
     CloseServiceHandle(schService);
 
@@ -121,6 +116,8 @@ BOOL scmOpenDevice(
     );
 	if (hDevice == INVALID_HANDLE_VALUE)
 	{
+		DWORD errcode = GetLastError();
+		printf_s("open driver error:%d", errcode);
 		return FALSE;
 	}
         
@@ -250,7 +247,7 @@ BOOL scmLoadDeviceDriver(
 
     schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (schSCManager) {
-        //scmRemoveDriver(schSCManager, Name);
+        scmRemoveDriver(schSCManager, Name);
 		scmUnloadDeviceDriver(Name);
         scmInstallDriver(schSCManager, Name, Path);
         scmStartDriver(schSCManager, Name);
@@ -259,5 +256,5 @@ BOOL scmLoadDeviceDriver(
 		
     }
 	
-    return bResult;
+     return bResult;
 }
