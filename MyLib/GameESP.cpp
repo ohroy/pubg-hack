@@ -421,23 +421,36 @@ void ESPWork()
 				}
 				else
 				{
-					pDxm->DrawString(x, y, TextPink, pDxm->pFont, "[%dm]", nLen - 1);
+					pDxm->DrawString(x, y, TextRed, pDxm->pFont, "[%dm]", nLen - 1);
 				}
 				pDxm->DrawBox(x - vret.z / 4, y, w, h, TextWhite);
 				pDxm->DrawBlood(x - vret.z / 4 - 5, y, h, w, fBlood);				
 			}
 		}
 	}
-	if ((GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0 && global::bAimOpen)
-	//if ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0 && global::bAimOpen)
+	if(global::bAimOpen)
 	{
 		bLockAim = TRUE;
 		float boneX = g_AimX - pDxm->s_width / 2.0;
 		float boneY = g_AimY - pDxm->s_height / 2.0;
-		
-		if (boneX >= -60.0 && boneX <= 60.0 && boneY >= -60.0 && boneY <= 60.0)
+		float moveOffsetX = boneX / 5;
+		float moveOffsetY = boneY / 5;
+
+		//开镜射击
+		if((GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0&& boneX >= -80.0 && boneX <= 80.0 && boneY >= -80.0 && boneY <= 80.0)
 		{
-			mouse_event(MOUSEEVENTF_MOVE, boneX/5, boneY/5, NULL, NULL);//除以5因为游戏中移动这个相对距离的话实际上会有更大的偏差
+			mouse_event(MOUSEEVENTF_MOVE, moveOffsetX, moveOffsetY, NULL, NULL);
+		}
+		//或者没开镜的情况下按了q键或者e键的
+		else if (boneX >= -120.0 && boneX <= 120 && boneY >= -120.0 && boneY <= 120.0 
+			&& ((GetAsyncKeyState('Q') & 0x8000) != 0|| (GetAsyncKeyState('E') & 0x8000) != 0)
+			)
+		{
+			mouse_event(MOUSEEVENTF_MOVE, moveOffsetX, moveOffsetY, NULL, NULL);
+			Sleep(10);
+			mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, NULL, NULL);
+			Sleep(100);
+			mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, NULL, NULL);
 		}
 	}
 	else
