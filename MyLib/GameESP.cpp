@@ -70,7 +70,7 @@ DWORD dwGamePid;
 
 namespace GameData {
 	BYTE bJuzhenTag[] = { 0xAB,0xAA,0xAA,0x3E,0x00,0x00,0x00,0x80,0x00,0x00,0x00,0x80,0x00,0x00,0x80,0x3F,0x00,0x00,0x00,0x80,0x61,0x8B,0x98,0x3F };
-	BYTE bPeopleTag[] = { 0x10,'?', '?',0x2A,0x00,0x00,0x20,0x00,'?','?','?',0x00,0x00,'?' ,'?' ,'?' ,'?' ,0x40,0x01};
+	BYTE bPeopleTag[] = { 0x10,'?', '?',0x2a,0x00,0x00,0x20,0x00,'?','?','?',0x00,0x00};
 	BYTE bLocalPlayerTag[] = { 0x98,'?','?',0x2A ,0x00 ,0x00 ,0x20 ,0x00 };
 	//BYTE bGoodsTag[] = { 0x9C,'?','?','?', 0x00 ,0x00 ,0x20 ,0x00 };
 	//BYTE bGoodsTag[] = { 0x9C,0xdf,'?','?', 0x00 ,0x00 ,0x20 ,0x00 };
@@ -309,7 +309,7 @@ float g_AimY = 0.0f;
 void ESPWork()
 {
 #pragma region 菜单处理
-	ShowMenu();
+	//ShowMenu();
 #pragma endregion 
 
 #pragma region FPS准心等杂项
@@ -330,23 +330,23 @@ void ESPWork()
 		DWORD_PTR dw2 = pMM->RPM<DWORD_PTR>(dw1 + GameData::OFFSET_2, sizeof(DWORD_PTR));
 		float fBlood = pMM->RPM<float>(dw1 + GameData::BLOOD_OFFSET, sizeof(float));
 		
-		if (fabs(fBlood) > 1e-5 && fBlood >0.0 && fBlood<=100)//大于0
+		if (fabs(fBlood) > 1e-5 && fBlood >=0.0 && fBlood<=100)//大于0
 		{
 
 			//判断队友
 			DWORD dwTeamId = pMM->RPM<DWORD>(pMM->RPM<DWORD>(dw1 + GameData::DUIYOU_OFFSET, sizeof(DWORD)) + 0x14, sizeof(DWORD));
 			//DWORD dwTeamId2 = pMM->RPM<DWORD>(pMM->RPM<DWORD>(dw1 + GameData::DUIYOU_OFFSET+4, sizeof(DWORD)) + 0x14, sizeof(DWORD));
 			//printf("队友id %d\n", dwTeamId);
-			if(dwTeamId<0x10 && dwTeamId!=0)
+			if(dwTeamId<5&& dwTeamId>0)
 			{
 				continue;
 			}
 			DWORD tmpid = pMM->RPM<DWORD>(dw1 + 0x14, sizeof(DWORD));
 			//printf("队友id%d\n",tmpid);
-			if(tmpid ==1)
-			{
-				continue;
-			}
+			//if(tmpid ==1)
+			//{
+			//	continue;
+			//}
 
 			nRealPeopleCount++;
 			D3DXVECTOR3 vPos = pMM->RPM<D3DXVECTOR3>(dw1 + GameData::POS_OFFSET, sizeof(D3DXVECTOR3));
@@ -434,7 +434,7 @@ void ESPWork()
 		float boneX = g_AimX - pDxm->s_width / 2.0;
 		float boneY = g_AimY - pDxm->s_height / 2.0;
 		float moveOffsetX = boneX / 5;
-		float moveOffsetY = boneY / 5;
+		float moveOffsetY = boneY / 4;
 
 		//开镜射击
 		if((GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0&& boneX >= -80.0 && boneX <= 80.0 && boneY >= -80.0 && boneY <= 80.0)
@@ -447,10 +447,10 @@ void ESPWork()
 			)
 		{
 			mouse_event(MOUSEEVENTF_MOVE, moveOffsetX, moveOffsetY, NULL, NULL);
+			Sleep(20);
+			mouse_event(MOUSEEVENTF_LEFTDOWN, moveOffsetX, moveOffsetY, NULL, NULL);
 			Sleep(10);
-			mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, NULL, NULL);
-			Sleep(100);
-			mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, NULL, NULL);
+			mouse_event(MOUSEEVENTF_LEFTUP, moveOffsetX, moveOffsetY, NULL, NULL);
 		}
 	}
 	else
@@ -460,7 +460,7 @@ void ESPWork()
 		g_AimY = 0;
 	}
 
-	pDxm->DrawString(pDxm->s_width/2-300, pDxm->s_height/11, DARKORANGE, pDxm->pFont, "附近存在[%d]敌人", (nRealPeopleCount+1)/2);
+	pDxm->DrawString(pDxm->s_width/2-300, pDxm->s_height/11, DARKORANGE, pDxm->pFont, "附近存在[%d]敌人", nRealPeopleCount);
 #pragma endregion
 
 #pragma region 物品
